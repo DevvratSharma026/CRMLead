@@ -66,3 +66,37 @@ export const getLeadById = async (req, res) => {
         })
     }
 }
+
+export const getLeadStat = async (req, res) => {
+    try {
+        const totalLeads = await Lead.countDocuments();
+        
+        const convertedLeads = await Lead.countDocuments({
+            status: "Converted",
+        });
+
+        const leadByStageAgg = await Lead.aggregate([
+            {
+                $group: {
+                    _id: "$stage",
+                    count: { $sum: 1 },
+                },
+            },
+        ]);
+
+        const leadByStage = {};
+        leadByStageAgg.forEach((item) => {
+            leadByStage[item._id] = item.count;
+        });
+
+        res.json({
+            totalLeads,
+            convertedLeads,
+            leadByStage
+        });
+    } catch(err) {
+        res.status(500).json({
+            message: err.message
+        })
+    }
+}
